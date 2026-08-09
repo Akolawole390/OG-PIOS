@@ -1,0 +1,5 @@
+# Future dependencies — not installed yet, listed for planning purposes only.
+# pandas
+# numpy
+# scikit-learn
+# xgboost

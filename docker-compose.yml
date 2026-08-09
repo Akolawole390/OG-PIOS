@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: og_pios_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-og_pios}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-og_pios_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-og_pios}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-og_pios} -d ${POSTGRES_DB:-og_pios}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: og_pios_backend
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-og_pios}:${POSTGRES_PASSWORD:-og_pios_dev_password}@db:5432/${POSTGRES_DB:-og_pios}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

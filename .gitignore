@@ -1,0 +1,25 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Temporary working files
+temp/output/*
+temp/resources/*
+!temp/output/.gitkeep
+!temp/resources/.gitkeep
+
+# Node / frontend
+node_modules/
+frontend/.next/
+frontend/coverage/
+
+# Python / backend
+__pycache__/
+*.pyc
+backend/.pytest_cache/
+backend/.venv/
+
+# OS
+.DS_Store
+Thumbs.db
