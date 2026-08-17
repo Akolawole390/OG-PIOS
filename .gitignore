@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Claude Code local tooling state (worktrees, plugin cache) — not project source
+.claude/
+
 # Temporary working files
 temp/output/*
 temp/resources/*

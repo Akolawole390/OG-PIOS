@@ -103,6 +103,8 @@ docker-compose.yml
 - `docker compose up -d --build` — start backend (FastAPI, :8000) + PostgreSQL.
 - `docker compose exec backend alembic upgrade head` — apply migrations.
 - `docker compose exec backend python -m app.db.seed` — seed roles + demo admin.
+- `docker compose exec backend python -m app.db.seed_wells` — seed 25 demo wells + 365 days of
+  production/pressure/temperature history + per-well production targets (idempotent).
 - `docker compose exec backend pytest -q` — backend tests.
 - `cd frontend && npm run dev` — frontend dev server (:3000, native, no Docker).
 - `cd frontend && npm run test` — frontend tests (Vitest).

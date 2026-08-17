@@ -29,6 +29,11 @@ def get_current_user(
     user = db.get(User, int(user_id))
     if user is None:
         raise credentials_exception
+    # A still-valid JWT must not outlive an administrator deactivating the account — checked
+    # here, once, rather than in every router, so deactivation actually takes effect immediately
+    # rather than only after the token naturally expires.
+    if not user.is_active:
+        raise credentials_exception
     return user
 
 

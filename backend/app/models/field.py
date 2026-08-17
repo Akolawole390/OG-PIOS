@@ -1,4 +1,6 @@
-from sqlalchemy import Float, ForeignKey, String
+from datetime import date
+
+from sqlalchemy import Date, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -35,10 +37,13 @@ class Well(Base, TimestampMixin):
     well_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     well_type: Mapped[str | None] = mapped_column(String(50))
-    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False, index=True)
     artificial_lift_type: Mapped[str | None] = mapped_column(String(100))
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
+    completion_date: Mapped[date | None] = mapped_column(Date)
+    completion_type: Mapped[str | None] = mapped_column(String(100))
+    total_depth_ft: Mapped[float | None] = mapped_column(Float)
 
     facility_id: Mapped[int] = mapped_column(ForeignKey("facilities.id"), nullable=False)
     facility: Mapped["Facility"] = relationship(back_populates="wells")

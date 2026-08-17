@@ -3,6 +3,28 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* dataviz palette — categorical slots 1-4, chart chrome (see dataviz skill palette.md) */
+  --chart-surface: #fcfcfb;
+  --chart-text-secondary: #52514e;
+  --chart-text-muted: #898781;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  --chart-series-1: #2a78d6;
+  --chart-series-2: #eb6834;
+  --chart-series-3: #1baf7a;
+  --chart-series-4: #eda100;
+
+  /* Status palette (equipment health bands) — fixed/never themed per the dataviz skill:
+     these hexes are identical in light and dark mode, kept separate from --chart-series-*
+     so a status color never impersonates a categorical series (and vice versa). 4 of 5
+     steps are the skill's documented good/warning/serious/critical hexes; --status-excellent
+     is new (validated: contrast 5.10 on light #fcfcfb, 3.33 on dark #1a1a19, both >=3:1). */
+  --status-excellent: #0a7d3c;
+  --status-good: #0ca30c;
+  --status-monitor: #fab219;
+  --status-maintenance-required: #ec835a;
+  --status-critical: #d03b3b;
 }
 
 @theme inline {
@@ -16,6 +38,16 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --chart-surface: #1a1a19;
+    --chart-text-secondary: #c3c2b7;
+    --chart-text-muted: #898781;
+    --chart-grid: #2c2c2a;
+    --chart-axis: #383835;
+    --chart-series-1: #3987e5;
+    --chart-series-2: #d95926;
+    --chart-series-3: #199e70;
+    --chart-series-4: #c98500;
   }
 }
 

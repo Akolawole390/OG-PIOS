@@ -1,10 +1,21 @@
 # Synthetic Demo Data — Planned Generator
 
-This documents the *future* design for generating realistic demo data. **No generator code
-exists yet** — this session only seeds the minimum needed to test auth end-to-end (7 roles +
-1 admin user, via `backend/app/db/seed.py`).
+This documents the *future full-scale* design for generating realistic demo data.
 
-## Planned scope
+**Partial implementation exists**: `backend/app/db/seed_wells.py` (run via
+`docker compose exec backend python -m app.db.seed_wells`) has grown module-by-module and now
+covers most of the planned scope below — 3 Fields, ~2-3 Facilities each, 25 Wells, 365 days of
+daily production/pressure/temperature history, downtime events, well/facility-linked equipment
+with ~90 days of sensor readings, maintenance work orders across the full type/status/priority
+vocabulary, monthly USD commodity prices, incident-linked production-loss records, operating
+cost records at field/facility/well/equipment level (split USD/NGN by field), and finally a real
+run of the Alerts module's rule engine against all of the above. It uses stdlib `random`/
+`datetime` only (no numpy/pandas), and is idempotent — safe to re-run, only actually re-seeds
+against an empty database. What remains deferred from the full-scale design below:
+hourly-cadence equipment readings across the full fleet (currently a representative subset) and
+the intentional-abnormal-event time series woven in for future anomaly detection/AI insights.
+
+## Planned scope (full-scale, future)
 - **3 Fields**, multiple **Facilities**, **25 Wells**.
 - **365 days** of daily production history per well: oil (BOPD), gas (MSCFD), water (BWPD),
   water cut, GOR, choke size, wellhead/tubing/casing/flowline pressure, temperature.
