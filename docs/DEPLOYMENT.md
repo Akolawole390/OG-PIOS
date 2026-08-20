@@ -27,27 +27,20 @@ project **Root Directory** is left at its default (the repo root), Vercel has no
 framework-detect or build at that path, so the deploy reports "Ready" (the no-op build itself
 doesn't error) but serves nothing at any route, including `/`.
 
-Two equally valid fixes — pick **one**, not both:
+**Fix in use: Root Directory set in the Vercel dashboard.** Project → Settings → General → Root
+Directory → `frontend`. Save, then redeploy. Vercel's zero-config Next.js detection then works
+exactly as it would for a single-app repo; no `vercel.json` is needed at all.
 
-1. **Recommended: set Root Directory in the Vercel dashboard.** Project → Settings → General →
-   Root Directory → `frontend`. Save, then trigger a redeploy. Vercel's zero-config Next.js
-   detection then works exactly as it would for a single-app repo; no `vercel.json` is required.
-2. **Alternative: keep Root Directory at the repo root** and let the checked-in root
-   `vercel.json` (already added to this repo) redirect the build into `frontend/`:
-   ```json
-   {
-     "framework": "nextjs",
-     "installCommand": "cd frontend && npm install",
-     "buildCommand": "cd frontend && npm run build",
-     "outputDirectory": "frontend/.next"
-   }
-   ```
-   Use this if you'd rather not touch the dashboard setting, or if other tooling in this repo
-   expects Vercel's working directory to stay at the root.
-
-If Root Directory is set to `frontend` in the dashboard, Vercel will look for `vercel.json`
-*inside* `frontend/` (which doesn't exist) and ignore the root one — the two approaches don't
-conflict, but only whichever one actually matches your dashboard setting takes effect.
+A root-level `vercel.json` with `cd frontend && ...` commands was tried first as an alternative
+(keeping Root Directory at the repo root and redirecting the build via config instead) and was
+removed after it caused a real conflict: Vercel's **"Include files outside the root directory in
+the Build Step"** project setting (Settings → Root Directory section) defaults to **enabled**, and
+with Root Directory already set to `frontend`, that setting still pulled in the *outside-root*
+`vercel.json` and ran its `cd frontend && npm install` — except the build's working directory was
+already `frontend/`, so it tried to `cd` into a nonexistent `frontend/frontend` and failed with
+`No such file or directory`. **Do not add a root-level `vercel.json` with `cd frontend` commands
+while Root Directory is set to `frontend`** — pick exactly one mechanism, and prefer the dashboard
+Root Directory setting (in use here) since it needs no repo-level config at all.
 
 ### Routing
 
@@ -169,7 +162,7 @@ Never commit real values for any of the above — `backend/.env.example` documen
 5. Verify `GET /health` on the backend's Railway URL returns `{"status": "ok"}`.
 6. Note the backend's Railway-assigned public URL.
 7. In Vercel: set `NEXT_PUBLIC_API_URL` to that backend URL, and set Root Directory to `frontend`
-   **or** rely on the root `vercel.json` (pick one, see above).
+   (see above — no `vercel.json` needed).
 8. Redeploy the frontend on Vercel.
 9. Test frontend → backend communication: visit the deployed root URL, confirm it loads and
    redirects to `/login`/`/dashboard`, and confirm a real API-backed page (e.g. Wells) shows data
