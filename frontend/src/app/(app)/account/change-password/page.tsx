@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ApiError, changePassword } from "@/lib/api";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -45,38 +46,29 @@ export default function ChangePasswordPage() {
       <PageHeader title="Change Password" description="Update the password for your own account." />
 
       <form onSubmit={handleSubmit} className="flex max-w-sm flex-col gap-4">
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Current password
-          <input
-            type="password"
-            required
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+        <PasswordInput
+          label="Current password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+        />
 
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          New password
-          <input
-            type="password"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+        <PasswordInput
+          label="New password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+        />
 
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Confirm new password
-          <input
-            type="password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+        <PasswordInput
+          label="Confirm new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          autoComplete="new-password"
+        />
 
         {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
         {message ? <p className="text-sm text-green-700 dark:text-green-400">{message}</p> : null}

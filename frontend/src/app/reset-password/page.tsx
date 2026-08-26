@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 import { ApiError, resetPassword } from "@/lib/api";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function ResetPasswordPage() {
   return (
@@ -72,27 +73,23 @@ function ResetPasswordForm() {
           </>
         ) : (
           <form onSubmit={handleSubmit}>
-            <label className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              New password
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              />
-            </label>
+            <PasswordInput
+              label="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className="mt-6"
+            />
 
-            <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Confirm new password
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              />
-            </label>
+            <PasswordInput
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className="mt-4"
+            />
 
             {error ? <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
