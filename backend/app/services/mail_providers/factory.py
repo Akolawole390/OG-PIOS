@@ -7,13 +7,18 @@ from fastapi import Depends
 from app.core.config import Settings, get_settings
 from app.services.mail_providers.base import MailProvider
 from app.services.mail_providers.console_provider import ConsoleMailProvider
+from app.services.mail_providers.resend_provider import ResendMailProvider
 
 
 def get_mail_provider(settings: Settings) -> MailProvider:
-    # Only "console" is implemented today — any other/unrecognized value still falls back to it
-    # rather than raising, so the app never breaks on mail configuration. A real SMTP/API-based
-    # provider can be added here later, selected the same way `ai_provider` selects among the AI
-    # providers.
+    provider = (settings.mail_provider or "console").lower()
+
+    if provider == "resend" and settings.resend_api_key:
+        return ResendMailProvider(api_key=settings.resend_api_key, from_address=settings.mail_from_address)
+
+    # Unset, unrecognized, or missing the required key for the selected provider — fall back to
+    # the console provider rather than raising, so the app never breaks on incomplete mail
+    # configuration, the same rule `ai_providers/factory.py` follows for `ai_provider`.
     return ConsoleMailProvider()
 
 

@@ -145,7 +145,9 @@ No other frontend environment variables exist — confirmed by searching `fronte
 | `LOCAL_AI_BASE_URL` / `LOCAL_AI_MODEL` | Config for a self-hosted/local AI provider | Required only if `AI_PROVIDER=local` | Railway backend service variables |
 | `RESET_TOKEN_EXPIRE_MINUTES` / `EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES` | Password reset / email verification token lifetimes | Optional | Railway backend service variables |
 | `FRONTEND_URL` | Used to build links inside password-reset/verification emails — should be the deployed Vercel URL in production | Required if using the mail flow in production | Railway backend service variables |
-| `MAIL_PROVIDER` | `console` (default) only logs emails — **must not be used in a real deployment**; no real mail provider is implemented yet | Required to change before real users rely on password reset | Railway backend service variables |
+| `MAIL_PROVIDER` | `console` (default) only logs emails — **must not be used in a real deployment**. Set to `resend` to send real emails via Resend (falls back to `console` if `RESEND_API_KEY` is missing) | Required to change before real users rely on password reset | Railway backend service variables |
+| `RESEND_API_KEY` | API key from resend.com — required when `MAIL_PROVIDER=resend` | Required if `MAIL_PROVIDER=resend` | Railway backend service variables |
+| `MAIL_FROM_ADDRESS` | Sender shown on outgoing emails, e.g. `OG-PIOS <onboarding@resend.dev>`. The `onboarding@resend.dev` address works without verifying a domain; switch to your own verified domain once set up in Resend | Optional (has a working default) | Railway backend service variables |
 
 Railway also injects `PORT` automatically (see Port section above) — do not set this yourself.
 

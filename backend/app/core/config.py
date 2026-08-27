@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     email_verification_token_expire_minutes: int = 60 * 24
     frontend_url: str = "http://localhost:3000"
     mail_provider: str = "console"
+    resend_api_key: str | None = None
+    mail_from_address: str = "OG-PIOS <onboarding@resend.dev>"
 
     @property
     def cors_origin_list(self) -> list[str]:
