@@ -1897,6 +1897,30 @@ export function getDailyBrief(narrative = false): Promise<DailyBrief> {
   return apiFetch(`/ai-insights/daily-brief${buildQuery({ narrative: narrative ? "true" : undefined })}`);
 }
 
+export async function exportDailyBriefPdf(narrative = false): Promise<void> {
+  if (typeof window === "undefined") return;
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(
+    `${API_URL}/ai-insights/daily-brief/export${buildQuery({ narrative: narrative ? "true" : undefined })}`,
+    { headers }
+  );
+  if (!response.ok) {
+    throw new ApiError(response.status, "Export failed");
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "og-pios-daily-brief.pdf";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export type ManagementSummarySection = { question: string; answer: string };
 
 export type ManagementSummary = {

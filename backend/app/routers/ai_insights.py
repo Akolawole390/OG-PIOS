@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
@@ -44,6 +45,7 @@ from app.services.audit import AuditAction, record_audit_event
 from app.services.insight_calculations import compute_is_stale, to_aware_utc
 from app.services.insight_engine import INSIGHT_DISCLAIMER, run_insight_engine
 from app.services.rate_limit import rate_limiter
+from app.services.report_export import build_daily_brief_pdf
 from app.services.root_cause import InvestigationTargetNotFound, investigate
 from app.services.system_settings import get_insight_stale_after_days
 
@@ -412,6 +414,28 @@ def get_daily_brief(
         sections=sections,
         narrative=narrative_text,
         disclaimer_text=INSIGHT_DISCLAIMER,
+    )
+
+
+@router.get("/daily-brief/export")
+def export_daily_brief_pdf(
+    narrative: bool = False,
+    db: Session = Depends(get_db),
+    provider: AIProvider = Depends(get_ai_provider_dependency),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    brief = get_daily_brief(narrative=narrative, db=db, provider=provider, current_user=current_user)
+    pdf_bytes = build_daily_brief_pdf(
+        generated_at=brief.generated_at,
+        period_label=brief.period_label,
+        sections=[s.model_dump() for s in brief.sections],
+        narrative=brief.narrative,
+        disclaimer_text=brief.disclaimer_text,
+    )
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=og-pios-daily-brief.pdf"},
     )
 
 

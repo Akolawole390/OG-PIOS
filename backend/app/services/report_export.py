@@ -266,6 +266,59 @@ def _pdf_section(pdf: FPDF, label: str, section: Any) -> None:
     pdf.ln(2)
 
 
+# ----- Daily Brief (Shift Briefing) -----
+
+# The Daily Brief has no persisted `Report`/`Scenario`-style DB row to build from — it's computed
+# live on every request (see routers/ai_insights.py's `get_daily_brief`) — so this takes plain
+# already-computed values rather than a model instance, unlike `build_pdf_export` above.
+
+
+def build_daily_brief_pdf(
+    *,
+    generated_at: Any,
+    period_label: str,
+    sections: list[dict],
+    narrative: str | None,
+    disclaimer_text: str,
+) -> bytes:
+    pdf = _ReportPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.multi_cell(0, 10, "OG-PIOS Daily Operations Intelligence", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(90, 90, 90)
+    pdf.cell(0, 6, f"Generated: {generated_at.strftime('%Y-%m-%d %H:%M UTC')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Period: {period_label}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_text_color(0, 0, 0)
+
+    if narrative:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 8, "Narrative Summary", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.multi_cell(0, 5, narrative, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    for section in sections:
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 7, section["title"], new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.multi_cell(0, 5, section["summary"], new_x="LMARGIN", new_y="NEXT")
+        if section.get("items"):
+            pdf.set_font("Helvetica", "", 9)
+            for item in section["items"]:
+                pdf.multi_cell(0, 5, f"- {item}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(120, 120, 120)
+    pdf.multi_cell(0, 5, disclaimer_text, new_x="LMARGIN", new_y="NEXT")
+
+    return bytes(pdf.output())
+
+
 def _pdf_bar_chart_if_available(pdf: FPDF, sections: dict) -> None:
     """One simple native bar chart, drawn with fpdf2's own rect primitives — no charting
     library. Only rendered when relevant data is actually present in this report."""

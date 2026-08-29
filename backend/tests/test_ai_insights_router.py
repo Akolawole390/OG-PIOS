@@ -216,6 +216,20 @@ def test_daily_brief_with_narrative_uses_mocked_provider(client, db_session, aut
     assert response.json()["narrative"] == "Fake AI interpretation."
 
 
+def test_daily_brief_export_returns_a_pdf(client, db_session, auth_headers, make_field_facility_well):
+    _seed_below_target_well(db_session, make_field_facility_well)
+    headers = auth_headers("Administrator")
+    response = client.get("/ai-insights/daily-brief/export", headers=headers)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content.startswith(b"%PDF")
+
+
+def test_daily_brief_export_requires_auth(client):
+    response = client.get("/ai-insights/daily-brief/export")
+    assert response.status_code == 401
+
+
 def test_management_summary_shape(client, db_session, auth_headers, make_field_facility_well):
     _seed_below_target_well(db_session, make_field_facility_well)
     headers = auth_headers("Administrator")
