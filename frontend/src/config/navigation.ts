@@ -4,6 +4,7 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
+  { label: "AI Command Centre", href: "/command-centre" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "Wells", href: "/wells" },
   { label: "Production", href: "/production" },
