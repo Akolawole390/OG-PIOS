@@ -1834,6 +1834,30 @@ export function askAssistant(question: string): Promise<AssistantAnswer> {
   return apiFetch(`/ai-insights/assistant`, { method: "POST", body: JSON.stringify({ question }) });
 }
 
+export type PossibleCause = {
+  description: string;
+  evidence_type: "observed_fact" | "calculated_metric" | "correlation" | "possible_contributor";
+};
+
+export type InvestigationResult = {
+  event: string;
+  impact_summary: string;
+  primary_contributor: string | null;
+  possible_causes: PossibleCause[];
+  ai_assessment: string;
+  confidence_level: "high" | "medium" | "low";
+  recommended_investigation: string;
+  sources: SourceReference[];
+  answered_by: "deterministic" | "ai";
+  disclaimer_text: string;
+};
+
+export type InvestigateTarget = { insight_id?: number; well_id?: number; equipment_id?: number };
+
+export function investigateEvent(target: InvestigateTarget): Promise<InvestigationResult> {
+  return apiFetch(`/ai-insights/investigate`, { method: "POST", body: JSON.stringify(target) });
+}
+
 export type InsightSeverityCounts = {
   critical: number;
   high: number;

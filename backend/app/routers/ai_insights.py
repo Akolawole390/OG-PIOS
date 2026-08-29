@@ -30,8 +30,11 @@ from app.schemas.ai_insight import (
     InsightStatusUpdateRequest,
     InsightSummaryResponse,
     InterpretResponse,
+    InvestigateRequest,
+    InvestigationResponse,
     ManagementSummaryResponse,
     ManagementSummarySection,
+    PossibleCauseRead,
     SourceReferenceRead,
 )
 from app.services.ai_assistant import answer_question
@@ -41,6 +44,7 @@ from app.services.audit import AuditAction, record_audit_event
 from app.services.insight_calculations import compute_is_stale, to_aware_utc
 from app.services.insight_engine import INSIGHT_DISCLAIMER, run_insight_engine
 from app.services.rate_limit import rate_limiter
+from app.services.root_cause import InvestigationTargetNotFound, investigate
 from app.services.system_settings import get_insight_stale_after_days
 
 router = APIRouter(prefix="/ai-insights", tags=["ai-insights"])
@@ -294,6 +298,40 @@ def ask_assistant(
             for s in answer.sources
         ],
         answered_by=answer.answered_by,
+        disclaimer_text=INSIGHT_DISCLAIMER,
+    )
+
+
+@router.post("/investigate", response_model=InvestigationResponse)
+def investigate_event(
+    payload: InvestigateRequest,
+    db: Session = Depends(get_db),
+    provider: AIProvider = Depends(get_ai_provider_dependency),
+    current_user: User = Depends(require_role(*NON_VIEWER_ROLES)),
+    _rate_limited: User = Depends(rate_limiter("investigate", limit=10, window_seconds=60)),
+) -> InvestigationResponse:
+    if payload.insight_id is None and payload.well_id is None and payload.equipment_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One of insight_id, well_id, or equipment_id is required",
+        )
+    try:
+        result = investigate(
+            db, provider, insight_id=payload.insight_id, well_id=payload.well_id, equipment_id=payload.equipment_id
+        )
+    except InvestigationTargetNotFound as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return InvestigationResponse(
+        event=result.event,
+        impact_summary=result.impact_summary,
+        primary_contributor=result.primary_contributor,
+        possible_causes=[PossibleCauseRead(description=c.description, evidence_type=c.evidence_type) for c in result.possible_causes],
+        ai_assessment=result.ai_assessment,
+        confidence_level=result.confidence_level,
+        recommended_investigation=result.recommended_investigation,
+        sources=[SourceReferenceRead(source_type=s.source_type, source_id=s.source_id, source_label=s.source_label) for s in result.sources],
+        answered_by=result.answered_by,
         disclaimer_text=INSIGHT_DISCLAIMER,
     )
 

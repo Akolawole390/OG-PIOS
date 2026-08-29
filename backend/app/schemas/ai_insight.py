@@ -193,3 +193,27 @@ class ManagementSummaryResponse(BaseModel):
     sections: list[ManagementSummarySection]
     narrative: str | None
     disclaimer_text: str
+
+
+class InvestigateRequest(BaseModel):
+    insight_id: int | None = None
+    well_id: int | None = None
+    equipment_id: int | None = None
+
+
+class PossibleCauseRead(BaseModel):
+    description: str
+    evidence_type: EvidenceType
+
+
+class InvestigationResponse(BaseModel):
+    event: str
+    impact_summary: str
+    primary_contributor: str | None
+    possible_causes: list[PossibleCauseRead]
+    ai_assessment: str
+    confidence_level: ConfidenceLevel
+    recommended_investigation: str
+    sources: list[SourceReferenceRead]
+    answered_by: Literal["deterministic", "ai"]
+    disclaimer_text: str
