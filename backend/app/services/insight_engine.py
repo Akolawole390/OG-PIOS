@@ -406,6 +406,50 @@ def _generate_production_insights(db: Session, alert_candidates: list[AlertCandi
             )
         )
 
+        # Same underperformer set, reframed as an actionable optimization opportunity (Current vs.
+        # Potential vs. estimated Gain) rather than a plain observation — the field median stands in
+        # for "potential" since there's no separate capacity/type-curve model in this codebase.
+        for wid, rate in underperformers.items():
+            well = wells_by_id[wid]
+            potential_gain = median - rate
+            candidates.append(
+                _finalize(
+                    [
+                        EvidenceCandidate(
+                            "observed_fact", f"{well.well_id} is currently producing {rate:.1f} BOPD.",
+                            "well", wid, well.well_id, round(rate, 1), "BOPD",
+                        ),
+                        EvidenceCandidate(
+                            "calculated_metric",
+                            f"{f.name}'s field median well oil rate is {median:.1f} BOPD, used here as the potential "
+                            f"benchmark for {well.well_id}.",
+                            "computed", None, f.name, round(median, 1), "BOPD",
+                        ),
+                        EvidenceCandidate(
+                            "possible_contributor",
+                            f"If {well.well_id} were brought to the field median rate, estimated additional production "
+                            f"is {potential_gain:.1f} BOPD — requires engineering review to confirm achievability "
+                            "(artificial-lift, choke, or reservoir constraints may limit this).",
+                            "well", wid, well.well_id, round(potential_gain, 1), "BOPD",
+                        ),
+                    ],
+                    dict(
+                        category="optimization", insight_type="production_optimization_opportunity", severity="informational",
+                        title=f"{well.well_id} — Potential Production Optimization",
+                        summary=(
+                            f"{well.well_id} is producing {rate:.1f} BOPD vs. a field median of {median:.1f} BOPD in "
+                            f"{f.name} — an estimated {potential_gain:.1f} BOPD optimization opportunity."
+                        ),
+                        well_id=wid, field_id=f.id,
+                        recommended_investigation="Investigate artificial-lift performance, choke setting, and reservoir conditions to assess whether this gap is recoverable.",
+                        estimated_production_impact_value=round(potential_gain, 1),
+                        estimated_production_impact_unit="BOPD",
+                        estimated_production_impact_note="Estimated gain if brought to field median performance — not guaranteed achievable.",
+                        dedup_key=_dedup_key("production_optimization_opportunity", "well", wid),
+                    ),
+                )
+            )
+
     return candidates
 
 

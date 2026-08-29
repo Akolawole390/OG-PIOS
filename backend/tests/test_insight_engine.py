@@ -112,6 +112,13 @@ def test_well_performance_comparison_flags_underperforming_well(db_session, make
     assert len(comparison) == 1
     assert "ID-05" in comparison[0].summary
 
+    opportunities = [i for i in insights if i.insight_type == "production_optimization_opportunity" and i.field_id == field.id]
+    assert len(opportunities) == 1
+    assert opportunities[0].category == "optimization"
+    assert opportunities[0].well_id == well_low.id
+    assert opportunities[0].estimated_production_impact_value == 90.0
+    assert opportunities[0].estimated_production_impact_unit == "BOPD"
+
 
 def test_equipment_health_deterioration_insight_collapses_tiers(db_session, make_equipment):
     critical_eq = make_equipment(equipment_tag="EQ-ID-01", status="operating")

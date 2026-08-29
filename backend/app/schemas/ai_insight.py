@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-InsightCategory = Literal["production", "equipment", "maintenance", "production_loss", "economics", "cross_domain"]
+InsightCategory = Literal["production", "equipment", "maintenance", "production_loss", "economics", "cross_domain", "optimization"]
 
 # Lighter than Alert's 5-state pipeline, deliberately: an insight is analytical commentary to
 # review, not a problem to resolve. Dismissal is always a 100% manual action — the engine never

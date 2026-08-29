@@ -18,7 +18,7 @@ import {
 } from "@/lib/api";
 
 const SEVERITY_OPTIONS = ["critical", "high", "medium", "low", "informational"];
-const CATEGORY_OPTIONS = ["production", "equipment", "maintenance", "production_loss", "economics", "cross_domain"];
+const CATEGORY_OPTIONS = ["production", "equipment", "maintenance", "production_loss", "economics", "cross_domain", "optimization"];
 const STATUS_OPTIONS = ["new", "reviewed", "dismissed"];
 const CONFIDENCE_OPTIONS = ["high", "medium", "low"];
 const PAGE_SIZE = 25;

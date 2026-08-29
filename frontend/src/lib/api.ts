@@ -1673,7 +1673,7 @@ export function runAlertRules(): Promise<AlertRunResponse> {
 
 // ----- AI Insights -----
 
-export type InsightCategory = "production" | "equipment" | "maintenance" | "production_loss" | "economics" | "cross_domain";
+export type InsightCategory = "production" | "equipment" | "maintenance" | "production_loss" | "economics" | "cross_domain" | "optimization";
 export type InsightStatus = "new" | "reviewed" | "dismissed";
 export type ConfidenceLevel = "high" | "medium" | "low";
 export type EvidenceType = "observed_fact" | "calculated_metric" | "correlation" | "possible_contributor";
