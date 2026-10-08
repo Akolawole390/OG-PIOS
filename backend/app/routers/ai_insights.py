@@ -38,7 +38,7 @@ from app.schemas.ai_insight import (
     PossibleCauseRead,
     SourceReferenceRead,
 )
-from app.services.ai_assistant import answer_question
+from app.services.orchestrator import answer_broad_question
 from app.services.ai_providers.base import AIProvider, StructuredPrompt
 from app.services.ai_providers.factory import get_ai_provider_dependency
 from app.services.audit import AuditAction, record_audit_event
@@ -292,7 +292,7 @@ def ask_assistant(
 ) -> AssistantAnswerResponse:
     if not payload.question.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="question is required")
-    answer = answer_question(db, payload.question, provider)
+    answer = answer_broad_question(db, payload.question, provider)
     return AssistantAnswerResponse(
         answer=answer.answer,
         sources=[

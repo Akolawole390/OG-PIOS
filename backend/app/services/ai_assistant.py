@@ -236,12 +236,23 @@ KNOWN_QUESTION_PATTERNS = (
 )
 
 
-def answer_question(db: Session, question: str, provider: AIProvider) -> AssistantAnswer:
+def try_known_patterns(db: Session, question: str) -> AssistantAnswer | None:
+    """Runs just the deterministic matcher set, returning None (rather than falling through to
+    the AI provider or the static pattern list) when nothing matches — the piece orchestrator.py
+    needs to know whether a *specific* known pattern fired before deciding whether to route a
+    leftover question toward broader, multi-domain investigation instead."""
     normalized = question.strip().lower()
     for matcher in _MATCHERS:
         result = matcher(db, normalized)
         if result is not None:
             return result
+    return None
+
+
+def answer_question(db: Session, question: str, provider: AIProvider) -> AssistantAnswer:
+    matched = try_known_patterns(db, question)
+    if matched is not None:
+        return matched
 
     if provider.is_configured:
         interpretation = provider.interpret(

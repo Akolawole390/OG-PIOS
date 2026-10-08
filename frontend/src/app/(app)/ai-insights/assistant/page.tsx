@@ -12,6 +12,8 @@ type Message = {
 };
 
 const EXAMPLE_QUESTIONS = [
+  "Why is production down?",
+  "What needs attention right now?",
   "What are the biggest production problems today?",
   "Which wells lost the most production this month?",
   "Which equipment requires attention?",
