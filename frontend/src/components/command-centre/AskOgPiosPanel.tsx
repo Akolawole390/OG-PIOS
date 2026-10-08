@@ -4,15 +4,16 @@ import Link from "next/link";
 import { useState } from "react";
 import { askAssistant, type AssistantAnswer } from "@/lib/api";
 
+const QUICK_ASK_QUESTIONS = ["Why is production down?", "What needs attention right now?"];
+
 export function AskOgPiosPanel() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<AssistantAnswer | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = question.trim();
+  async function ask(text: string) {
+    const trimmed = text.trim();
     if (!trimmed || isSending) return;
     setError(null);
     setIsSending(true);
@@ -26,6 +27,11 @@ export function AskOgPiosPanel() {
     }
   }
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await ask(question);
+  }
+
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center justify-between gap-2">
@@ -35,7 +41,21 @@ export function AskOgPiosPanel() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
+        {QUICK_ASK_QUESTIONS.map((q) => (
+          <button
+            key={q}
+            type="button"
+            onClick={() => ask(q)}
+            disabled={isSending}
+            className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-2 flex gap-2">
         <input
           type="text"
           value={question}
