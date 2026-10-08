@@ -102,3 +102,68 @@ def test_unmatched_question_with_no_provider_lists_known_patterns(db_session):
     answer = answer_question(db_session, "Tell me a joke about drilling rigs.", NullProvider())
     assert answer.answered_by == "deterministic"
     assert "biggest production problems" in answer.answer.lower()
+
+
+def test_maintenance_overdue_question_reports_past_due_work_orders(db_session, make_equipment):
+    from app.models.equipment import MaintenanceRecord
+
+    equipment = make_equipment(equipment_tag="AS-EQ-OVERDUE")
+    db_session.add(
+        MaintenanceRecord(
+            equipment_id=equipment.id,
+            maintenance_type="preventive",
+            status="scheduled",
+            planned_completion_date=date.today() - timedelta(days=5),
+        )
+    )
+    db_session.commit()
+
+    answer = answer_question(db_session, "What maintenance is overdue?", NullProvider())
+    assert "AS-EQ-OVERDUE" in answer.answer
+    assert "1 maintenance work order" in answer.answer
+
+
+def test_no_overdue_maintenance_gives_a_clean_negative_answer(db_session):
+    answer = answer_question(db_session, "What maintenance is overdue?", NullProvider())
+    assert "no maintenance work orders are currently overdue" in answer.answer.lower()
+
+
+def test_completed_work_order_past_due_date_is_not_counted_as_overdue(db_session, make_equipment):
+    """A completed/cancelled record keeps its old planned_completion_date forever — it must never
+    be counted as overdue just because that date is in the past."""
+    from app.models.equipment import MaintenanceRecord
+
+    equipment = make_equipment(equipment_tag="AS-EQ-DONE")
+    db_session.add(
+        MaintenanceRecord(
+            equipment_id=equipment.id,
+            maintenance_type="preventive",
+            status="completed",
+            planned_completion_date=date.today() - timedelta(days=5),
+        )
+    )
+    db_session.commit()
+
+    answer = answer_question(db_session, "What maintenance is overdue?", NullProvider())
+    assert "no maintenance work orders are currently overdue" in answer.answer.lower()
+
+
+def test_equipment_reliability_question_reports_weakest_equipment(db_session, make_equipment):
+    from datetime import datetime, timezone
+
+    equipment = make_equipment(equipment_tag="AS-EQ-RELY")
+    now = datetime.now(timezone.utc)
+    db_session.add(DowntimeEvent(equipment_id=equipment.id, start_time=now - timedelta(days=200), end_time=now - timedelta(days=199)))
+    db_session.add(DowntimeEvent(equipment_id=equipment.id, start_time=now - timedelta(days=100), end_time=now - timedelta(days=99)))
+    db_session.commit()
+
+    answer = answer_question(db_session, "Which equipment has the weakest reliability/integrity?", NullProvider())
+    assert "AS-EQ-RELY" in answer.answer
+    assert "availability" in answer.answer.lower()
+    assert "MTBF" in answer.answer
+
+
+def test_reliability_question_with_no_downtime_history_says_so(db_session, make_equipment):
+    make_equipment(equipment_tag="AS-EQ-NODATA")
+    answer = answer_question(db_session, "What is our maintenance integrity like?", NullProvider())
+    assert "not enough recorded downtime history" in answer.answer.lower()

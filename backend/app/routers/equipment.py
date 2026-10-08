@@ -569,6 +569,29 @@ def get_equipment_downtime(
     )
 
 
+def get_equipment_reliability_result(db: Session, equipment: Equipment, now: datetime | None = None):
+    """Shared reliability computation — the DB-querying wrapper around
+    services/reliability_metrics.py's pure `compute_reliability()`, used by both this router's
+    `GET /equipment/{id}/reliability` endpoint and the AI Assistant's reliability/integrity
+    question matcher (services/ai_assistant.py), so both read the exact same window/query logic
+    rather than maintaining two copies that could drift apart."""
+    now = now or datetime.now(timezone.utc)
+    window_start = now - timedelta(days=365)
+    if equipment.installation_date is not None:
+        installed_at = datetime.combine(equipment.installation_date, datetime.min.time(), tzinfo=timezone.utc)
+        window_start = max(window_start, installed_at)
+    observation_period_hours = max((now - window_start).total_seconds() / 3600, 0.0)
+
+    events = (
+        db.query(DowntimeEvent)
+        .filter(DowntimeEvent.equipment_id == equipment.id, DowntimeEvent.start_time >= window_start)
+        .all()
+    )
+    intervals = [DowntimeInterval(start=e.start_time, end=e.end_time) for e in events]
+
+    return compute_reliability(intervals, observation_period_hours, now=now)
+
+
 @router.get("/{id}/reliability", response_model=ReliabilityMetricsRead)
 def get_equipment_reliability(
     id: int,
@@ -579,22 +602,7 @@ def get_equipment_reliability(
     equipment's DowntimeEvent history — see services/reliability_metrics.py for the
     documented assumptions and disclaimer."""
     equipment = _get_equipment_or_404(db, id)
-
-    now = datetime.now(timezone.utc)
-    window_start = now - timedelta(days=365)
-    if equipment.installation_date is not None:
-        installed_at = datetime.combine(equipment.installation_date, datetime.min.time(), tzinfo=timezone.utc)
-        window_start = max(window_start, installed_at)
-    observation_period_hours = max((now - window_start).total_seconds() / 3600, 0.0)
-
-    events = (
-        db.query(DowntimeEvent)
-        .filter(DowntimeEvent.equipment_id == id, DowntimeEvent.start_time >= window_start)
-        .all()
-    )
-    intervals = [DowntimeInterval(start=e.start_time, end=e.end_time) for e in events]
-
-    result = compute_reliability(intervals, observation_period_hours, now=now)
+    result = get_equipment_reliability_result(db, equipment)
 
     return ReliabilityMetricsRead(
         equipment_id=id,

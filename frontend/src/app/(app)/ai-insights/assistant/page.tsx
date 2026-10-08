@@ -21,6 +21,8 @@ const EXAMPLE_QUESTIONS = [
   "What are the biggest production-loss opportunities?",
   "Which field has the highest cost per barrel?",
   "What changed compared with last month?",
+  "What maintenance is overdue?",
+  "Which equipment has the weakest reliability/integrity?",
 ];
 
 export default function AiOperationsAssistantPage() {

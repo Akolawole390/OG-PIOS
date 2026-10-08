@@ -7,7 +7,7 @@ proven elsewhere in the app, with source citations the user can follow back to t
 
 import re
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,8 @@ from app.routers.cost_revenue import (
     _load_price_series,
     _per_unit_by_currency,
 )
+from app.routers.equipment import get_equipment_reliability_result
+from app.routers.maintenance import TERMINAL_STATUSES as TERMINAL_MAINTENANCE_STATUSES
 from app.services.ai_providers.base import AIProvider, StructuredPrompt
 from app.services.system_settings import get_boe_gas_factor
 
@@ -213,6 +215,67 @@ def _match_what_changed(db: Session, question: str) -> AssistantAnswer | None:
     )
 
 
+def _match_maintenance_overdue(db: Session, question: str) -> AssistantAnswer | None:
+    if not any(kw in question for kw in ("overdue", "maintenance backlog", "behind on maintenance")):
+        return None
+    today = date.today()
+    overdue_filter = (
+        MaintenanceRecord.status.notin_(TERMINAL_MAINTENANCE_STATUSES),
+        MaintenanceRecord.planned_completion_date.isnot(None),
+        MaintenanceRecord.planned_completion_date < today,
+    )
+    total_overdue = db.query(MaintenanceRecord).filter(*overdue_filter).count()
+    if not total_overdue:
+        return AssistantAnswer("No maintenance work orders are currently overdue.", [])
+    records = (
+        db.query(MaintenanceRecord)
+        .filter(*overdue_filter, MaintenanceRecord.equipment_id.isnot(None))
+        .order_by(MaintenanceRecord.planned_completion_date.asc())
+        .limit(5)
+        .all()
+    )
+    equipment_by_id = {e.id: e for e in db.query(Equipment).filter(Equipment.id.in_([r.equipment_id for r in records])).all()}
+    lines = [
+        f"{equipment_by_id[r.equipment_id].equipment_tag} ({r.work_order_number or f'WO #{r.id}'}): "
+        f"due {r.planned_completion_date.isoformat()}"
+        for r in records
+        if r.equipment_id in equipment_by_id
+    ]
+    return AssistantAnswer(
+        f"{total_overdue} maintenance work order(s) are overdue. Earliest due: " + "; ".join(lines) + ".",
+        [SourceReference("maintenance_record", r.id, r.work_order_number or f"WO #{r.id}") for r in records],
+    )
+
+
+def _match_equipment_reliability(db: Session, question: str) -> AssistantAnswer | None:
+    if not any(kw in question for kw in ("reliability", "integrity", "mtbf", "mttr", "availability")):
+        return None
+    now = datetime.now(timezone.utc)
+    ranked: list[tuple[Equipment, float, str]] = []
+    for equipment in db.query(Equipment).all():
+        result = get_equipment_reliability_result(db, equipment, now=now)
+        if result.availability_pct is None or result.failure_count == 0:
+            continue  # no recorded downtime history to judge reliability by — not "perfectly reliable"
+        detail = f"{result.availability_pct:.1f}% availability"
+        if result.mtbf_data_sufficient:
+            detail += f", MTBF {result.mtbf_hours:.0f}h"
+        ranked.append((equipment, result.availability_pct, detail))
+    if not ranked:
+        return AssistantAnswer(
+            "Not enough recorded downtime history yet to compute reliability/integrity metrics for any "
+            "equipment — see an individual equipment's Reliability tab once failure events are recorded.",
+            [],
+        )
+    ranked.sort(key=lambda row: row[1])
+    top = ranked[:5]
+    lines = [f"{e.equipment_tag}: {detail}" for e, _, detail in top]
+    return AssistantAnswer(
+        "Equipment with the weakest reliability/integrity over the last year, by availability (foundational "
+        "estimate from recorded downtime events — not certified reliability engineering): " + "; ".join(lines) + ".",
+        [SourceReference("equipment", e.id, e.equipment_tag) for e, _, _ in top],
+    )
+
+
 _MATCHERS = (
     _match_production_problems,
     _match_wells_lost_most_production,
@@ -222,6 +285,8 @@ _MATCHERS = (
     _match_biggest_loss_opportunities,
     _match_highest_cost_per_barrel,
     _match_what_changed,
+    _match_maintenance_overdue,
+    _match_equipment_reliability,
 )
 
 KNOWN_QUESTION_PATTERNS = (
@@ -233,6 +298,8 @@ KNOWN_QUESTION_PATTERNS = (
     "What are the biggest production-loss opportunities?",
     "Which field has the highest cost per barrel?",
     "What changed compared with last month?",
+    "What maintenance is overdue?",
+    "Which equipment has the weakest reliability/integrity?",
 )
 
 
